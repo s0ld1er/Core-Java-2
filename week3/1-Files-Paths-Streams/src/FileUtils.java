@@ -2,16 +2,14 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -28,23 +26,30 @@ public class FileUtils {
     }
 
     public static void compress(File filePath) throws IOException {
-        String file = readFrom(filePath);
-        Map<String, Integer> mapOfFile = new LinkedHashMap<String, Integer>();
-        StringBuilder newFile = new StringBuilder();
-        String[] allWords = file.toLowerCase().split(" ");
-        int currentWord = 1;
-        ArrayList<String> words = new ArrayList<String>();
-        
-        for (String s : allWords) {
-            words.add(s.replaceAll(" ",""));
+        String fileToText = readFrom(filePath);
+        String[] allWords = fileToText.split(" ");
+        StringBuilder newFileContent = new StringBuilder();
+        Map<String, Integer> mapOfWords = new LinkedHashMap<String, Integer>();
 
+        int wordInd = 0;
+        for (String w : allWords) {
+            if (!mapOfWords.containsKey(w)) {
+                mapOfWords.put(w, wordInd);
+                wordInd++;
+            }
         }
-//        for(String s : words){
-//
-//            }
-        words.add("dadadadadsasd");
-        System.out.println(Arrays.toString(words.toArray()));
-        System.out.println();
+
+        newFileContent.append("Original text : ").append(fileToText).append(System.lineSeparator());
+        newFileContent.append("Compresssed : ");
+
+        for (String word : allWords) {
+            String compressedWord = "~" + mapOfWords.get(word) + " ";
+            newFileContent.append(compressedWord);
+        }
+
+        newFileContent.append(System.lineSeparator()).append("Legend: " + mapOfWords.toString());
+        Path pathToWrite = Paths.get("D:/file.compr");
+        writeTo(pathToWrite, newFileContent.toString());
     }
 
     public static void fixBrokenStuff(Path path) throws IOException {
@@ -110,24 +115,25 @@ public class FileUtils {
         String currentLine = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
         while ((currentLine = br.readLine()) != null) {
-            allLines.append(currentLine + "\n");
+            allLines.append(currentLine + System.lineSeparator());
         }
         br.close();
         return allLines.toString();
     }
 
-    public static File writeTo(String text) throws IOException {
-        File f = new File("D:/testData/writed.txt");
-        if (!f.exists())
-            f.createNewFile();
-        FileOutputStream fos = new FileOutputStream("D:/testData/writed.txt");
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
-
+    public static void writeTo(File file, String text) throws IOException {
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        FileWriter fw = new FileWriter(file);
+        BufferedWriter bw = new BufferedWriter(fw);
         bw.write(text);
-        bw.newLine();
         bw.close();
+    }
 
-        return f;
+    public static void writeTo(Path path, String text) throws IOException {
+        File file = path.toFile();
+        writeTo(file, text);
     }
 
     public WordCountResult wordCount(Path path) throws IOException {
@@ -142,7 +148,7 @@ public class FileUtils {
         while ((currentLine = br.readLine()) != null) {
             wc.lineCount++;
             wc.charCount += currentLine.length();
-            allLines.append(currentLine + "\n");
+            allLines.append(currentLine + System.lineSeparator());
         }
         br.close();
         wc.wordCount = allLines.length() - allLines.toString().replace(" ", "").length() + 1;
